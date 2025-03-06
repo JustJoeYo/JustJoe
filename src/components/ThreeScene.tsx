@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const ThreeScene: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log("ThreeScene component mounted"); // Log when component mounts
+    console.log("ThreeScene component mounted");
 
     const mount = mountRef.current!;
     const scene = new THREE.Scene();
@@ -19,21 +20,50 @@ const ThreeScene: React.FC = () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000); // Set background color to black
     mount.appendChild(renderer.domElement);
-    console.log("Renderer DOM element appended"); // Log when renderer DOM element is appended
+    console.log("Renderer DOM element appended");
 
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
 
-    camera.position.z = 5;
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5).normalize();
+    scene.add(directionalLight);
+
+    // Load the 3D model from local file
+    const loader = new GLTFLoader();
+    loader.load(
+      "/models/scene.gltf", // Path to your local model file
+      (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        console.log("Model loaded");
+
+        // Adjust camera to fit the model
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const center = box.getCenter(new THREE.Vector3());
+
+        camera.near = size / 100;
+        camera.far = size * 100;
+        camera.updateProjectionMatrix();
+
+        camera.position.copy(center);
+        camera.position.x += size / 2.0;
+        camera.position.y += size / 5.0;
+        camera.position.z += size / 2.0;
+        camera.lookAt(center);
+      },
+      undefined,
+      (error) => {
+        console.error("An error occurred while loading the model", error);
+      },
+    );
 
     const animate = () => {
       requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
       renderer.render(scene, camera);
-      console.log("Animating..."); // Log when animating
+      console.log("Animating...");
     };
 
     animate();
@@ -47,7 +77,7 @@ const ThreeScene: React.FC = () => {
     window.addEventListener("resize", handleResize);
 
     return () => {
-      console.log("ThreeScene component unmounted"); // Log when component unmounts
+      console.log("ThreeScene component unmounted");
       window.removeEventListener("resize", handleResize);
       mount.removeChild(renderer.domElement);
     };

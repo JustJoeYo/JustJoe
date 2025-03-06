@@ -1,4 +1,3 @@
-import React from "react";
 import ThreeScene from "./components/ThreeScene";
 
 function App() {
