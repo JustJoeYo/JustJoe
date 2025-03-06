@@ -48,25 +48,38 @@ const ThreeScene: React.FC = () => {
         camera.far = size * 100;
         camera.updateProjectionMatrix();
 
+        // Adjust camera position to be inside the model
         camera.position.copy(center);
-        camera.position.x += size / 2.0;
-        camera.position.y += size / 5.0;
-        camera.position.z += size / 2.0;
-        camera.lookAt(center);
+        camera.position.x -= size / 8.0; // Adjust these values to position the camera inside the model
+        camera.position.y -= size / 11.0;
+        camera.position.z += size / 25.0;
+
+        // Move the camera forward a bit
+        camera.position.z -= size / 5.0;
+
+        // Calculate the point to look at for a 90-degree right rotation
+        const lookAtPoint = new THREE.Vector3(
+          center.x + Math.cos(-Math.PI / 1.8) * size,
+          //center.y,
+          center.y + Math.sin(-Math.PI / 0.1) * size,
+          center.z + Math.sin(-Math.PI / 2) * size,
+        );
+
+        camera.lookAt(lookAtPoint);
+
+        // Update controls in the animation loop
+        const animate = () => {
+          requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        };
+
+        animate();
       },
       undefined,
       (error) => {
         console.error("An error occurred while loading the model", error);
       },
     );
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-      console.log("Animating...");
-    };
-
-    animate();
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
